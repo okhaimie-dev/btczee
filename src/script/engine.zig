@@ -1,10 +1,12 @@
 const std = @import("std");
 const Allocator = std.mem.Allocator;
+const ConditionalStack = @import("cond_stack.zig").ConditionalStack;
 const Stack = @import("stack.zig").Stack;
 const StackError = @import("stack.zig").StackError;
 const Script = @import("lib.zig").Script;
 const ScriptFlags = @import("lib.zig").ScriptFlags;
 const arithmetic = @import("opcodes/arithmetic.zig");
+const flow = @import("opcodes/flow.zig");
 
 /// Errors that can occur during script execution
 pub const EngineError = error{
@@ -34,6 +36,7 @@ pub const Engine = struct {
     flags: ScriptFlags,
     /// Memory allocator
     allocator: Allocator,
+    cond_stack: ConditionalStack,
 
     /// Initialize a new Engine
     ///
@@ -52,6 +55,7 @@ pub const Engine = struct {
             .pc = 0,
             .flags = flags,
             .allocator = allocator,
+            .cond_stack = ConditionalStack.init(allocator),
         };
     }
 
@@ -59,6 +63,7 @@ pub const Engine = struct {
     pub fn deinit(self: *Engine) void {
         self.stack.deinit();
         self.alt_stack.deinit();
+        self.cond_stack.deinit();
     }
 
     /// Log debug information
@@ -113,6 +118,8 @@ pub const Engine = struct {
             0x51...0x60 => try self.opN(opcode),
             0x61 => try self.opNop(),
             0x62 => try self.opReserved(opcode),
+            0x63 => try flow.opIf(self),
+            0x64 => try flow.opNotIf(self),
             0x65...0x66 => try self.opReserved(opcode),
             0x69 => try self.opVerify(),
             0x6a => try self.opReturn(),

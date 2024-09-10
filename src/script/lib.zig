@@ -1,4 +1,5 @@
 pub const engine = @import("engine.zig");
+pub const cond_stack = @import("cond_stack.zig");
 pub const stack = @import("stack.zig");
 pub const arithmetic = @import("opcodes/arithmetic.zig");
 
