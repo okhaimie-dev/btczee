@@ -1,6 +1,8 @@
 const std = @import("std");
 const Allocator = std.mem.Allocator;
 const ConditionalStack = @import("cond_stack.zig").ConditionalStack;
+const ConditionalStackError = @import("cond_stack.zig").ConditionalStackError;
+const FlowError = @import("opcodes/flow.zig").FlowError;
 const Stack = @import("stack.zig").Stack;
 const StackError = @import("stack.zig").StackError;
 const Script = @import("lib.zig").Script;
@@ -20,7 +22,7 @@ pub const EngineError = error{
     UnknownOpcode,
     /// Reserved opcode encountered
     ReservedOpcode,
-} || StackError;
+} || StackError || ConditionalStackError || FlowError;
 
 /// Engine is the virtual machine that executes Bitcoin scripts
 pub const Engine = struct {
@@ -121,6 +123,8 @@ pub const Engine = struct {
             0x63 => try flow.opIf(self),
             0x64 => try flow.opNotIf(self),
             0x65...0x66 => try self.opReserved(opcode),
+            0x67 => try flow.opElse(self),
+            0x68 => try flow.opEndIf(self),
             0x69 => try self.opVerify(),
             0x6a => try self.opReturn(),
             0x6d => try self.op2Drop(),
